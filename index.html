@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="PULSE — a private personal expense tracker that works offline.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PULSE">
 <title>PULSE — Personal Expense Tracker</title>
 <style>
 :root{--bg:#0b1020;--panel:#121a2d;--panel2:#172238;--line:#26334b;--text:#edf2ff;--muted:#8f9bb3;--green:#39d6a0;--red:#ff7185;--blue:#7da7ff;--yellow:#f5c76b;--shadow:0 18px 50px #0005}
@@ -10,6 +18,25 @@
 button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;margin:auto;padding:28px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:30px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--green),#168d8b);display:grid;place-items:center;color:#061a19;font-weight:900;font-size:21px;box-shadow:0 8px 25px #39d6a033}.brand h1{font-size:20px;letter-spacing:2px;margin:0}.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:1.4px}.top-actions{display:flex;gap:10px;align-items:center}.date-pill,.ghost-btn{border:1px solid var(--line);background:#111a2c;color:var(--muted);padding:10px 14px;border-radius:12px}.primary{border:0;background:var(--green);color:#06241c;font-weight:800;padding:11px 16px;border-radius:12px;box-shadow:0 8px 22px #39d6a022}.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:22px}.main{min-width:0}.welcome{display:flex;justify-content:space-between;align-items:end;margin-bottom:20px}.welcome h2{margin:0;font-size:26px;letter-spacing:-.7px}.welcome p{margin:5px 0 0;color:var(--muted)}.period{color:var(--muted);font-size:13px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px}.card{background:linear-gradient(145deg,#172238,#111a2c);border:1px solid var(--line);border-radius:18px;padding:19px;box-shadow:var(--shadow)}.stat-head{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px}.stat-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:#ffffff0b;font-size:17px}.amount{font-size:27px;font-weight:800;letter-spacing:-.8px;margin:13px 0 3px}.sub{font-size:12px;color:var(--muted)}.positive{color:var(--green)}.negative{color:var(--red)}.middle-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:15px;margin-bottom:20px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:15px}.section-head h3{font-size:15px;margin:0}.section-head span{font-size:12px;color:var(--muted)}.chart-wrap{height:205px;position:relative}.chart-wrap canvas{width:100%;height:100%}.legend{display:flex;gap:16px;color:var(--muted);font-size:11px;margin-top:8px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}.category-list{display:grid;gap:15px}.cat-row{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px}.cat-icon{width:34px;height:34px;border-radius:11px;background:#ffffff0b;display:grid;place-items:center}.cat-name{font-size:12px}.bar{height:5px;background:#29364d;border-radius:20px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;border-radius:20px;background:var(--blue)}.cat-value{font-size:12px;color:var(--muted)}.transactions{margin-bottom:20px}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input,.filters select,.field input,.field select{background:#0e1728;border:1px solid var(--line);color:var(--text);padding:9px 11px;border-radius:10px;outline:none}.filters input:focus,.field input:focus,.field select:focus{border-color:var(--green)}.filters input{min-width:150px}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:560px}th{text-align:left;color:var(--muted);font-size:11px;font-weight:600;padding:11px 8px;border-bottom:1px solid var(--line)}td{padding:13px 8px;border-bottom:1px solid #26334b88;font-size:13px}tbody tr:last-child td{border-bottom:0}.tx-name{display:flex;align-items:center;gap:10px;font-weight:650}.tx-badge{width:33px;height:33px;border-radius:10px;background:#ffffff0b;display:grid;place-items:center}.tx-meta{font-size:11px;color:var(--muted);font-weight:400}.tx-amount{font-weight:750;text-align:right;white-space:nowrap}.actions{display:flex;justify-content:flex-end;gap:6px}.icon-btn{border:1px solid var(--line);background:#0e1728;color:var(--muted);border-radius:8px;padding:5px 8px}.icon-btn:hover{color:var(--text);border-color:var(--green)}.side{display:grid;align-content:start;gap:15px}.side .card{padding:19px}.budget-top{display:flex;justify-content:space-between;align-items:center}.budget-top h3{margin:0;font-size:15px}.budget-number{font-size:23px;font-weight:800;margin:15px 0 2px}.budget-track{height:9px;border-radius:20px;background:#29364d;overflow:hidden;margin:12px 0 8px}.budget-track i{display:block;height:100%;background:var(--green);border-radius:20px}.budget-note{font-size:12px;color:var(--muted)}.quick-title{font-size:15px;margin:0 0 13px}.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.quick{border:1px solid var(--line);background:#0e1728;color:var(--text);border-radius:12px;padding:12px;text-align:left}.quick b{display:block;font-size:13px;margin-top:6px}.quick small{color:var(--muted);font-size:11px}.insight{font-size:13px;color:var(--muted);margin:0}.insight strong{color:var(--text)}.footer{color:#69758c;text-align:center;font-size:11px;padding:15px}.empty{text-align:center;color:var(--muted);padding:28px 10px}.modal-backdrop{position:fixed;inset:0;background:#050914c9;display:none;align-items:center;justify-content:center;padding:18px;z-index:5}.modal-backdrop.show{display:flex}.modal{width:min(100%,470px);background:#141e32;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 25px 90px #0009}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px}.modal-head h3{margin:0;font-size:18px}.close{border:0;background:transparent;color:var(--muted);font-size:23px}.type-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#0d1627;padding:5px;border-radius:12px;margin-bottom:15px}.type-switch button{border:0;border-radius:9px;padding:9px;background:transparent;color:var(--muted)}.type-switch button.active[data-type="expense"]{background:#4a2635;color:#ff9baa}.type-switch button.active[data-type="income"]{background:#164638;color:#7df0c6}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;color:var(--muted)}.field input,.field select{width:100%;padding:11px}.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:19px}.cancel{border:1px solid var(--line);background:transparent;color:var(--muted);padding:10px 14px;border-radius:10px}.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);background:#eafff6;color:#0c3026;padding:11px 16px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:.25s;z-index:10;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media(max-width:1000px){.layout{grid-template-columns:1fr}.side{grid-template-columns:repeat(2,1fr)}.side .card:last-child{grid-column:1/-1}}
 @media(max-width:700px){.app{padding:17px}.topbar{align-items:flex-start}.date-pill{display:none}.welcome{align-items:flex-start;flex-direction:column;gap:8px}.welcome h2{font-size:23px}.stats{grid-template-columns:1fr;gap:10px}.stats .card{padding:15px}.amount{font-size:23px;margin:7px 0 1px}.middle-grid{grid-template-columns:1fr}.side{grid-template-columns:1fr}.side .card:last-child{grid-column:auto}.top-actions .primary{padding:10px 12px}.brand h1{font-size:17px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.filters{width:100%}.filters input{flex:1}}
+/* ---- PWA upgrade: backup & restore ---- */
+[hidden]{display:none!important}
+.data-card{margin-bottom:20px}
+.data-note{color:var(--muted);font-size:13px;margin:0 0 14px}
+.data-actions{display:flex;flex-wrap:wrap;gap:10px}
+.data-actions .primary,.data-actions .ghost-btn{padding:10px 14px}
+.warn-text{color:var(--yellow)!important}
+.import-box{background:#0e1728;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:13px}
+.import-box dl{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin:0}
+.import-box dt{color:var(--muted)}
+.import-box dd{margin:0;font-weight:700;text-align:right;word-break:break-all}
+.import-help{color:var(--muted);font-size:12px;margin:0 0 8px}
+.import-help b{color:var(--text)}
+.import-error{color:var(--red);font-size:14px;margin:0}
+.danger-btn{border:1px solid #ff718566;background:transparent;color:var(--red);padding:10px 14px;border-radius:10px;font-weight:700}
+.danger-btn:hover{background:#ff71851a}
+.modal-actions{flex-wrap:wrap}
+.primary:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
+.install-btn{margin-top:8px;font-size:12px;padding:8px 12px}
 </style>
 </head>
 <body>
@@ -35,6 +62,16 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
         <div class="filters" style="margin-bottom:12px"><input id="search" type="search" placeholder="Search transactions…"><select id="filterType"><option value="all">All types</option><option value="income">Income</option><option value="expense">Expenses</option></select><select id="filterCategory"><option value="all">All categories</option></select></div>
         <div class="table-wrap"><table><thead><tr><th>TRANSACTION</th><th>DATE</th><th>CATEGORY</th><th style="text-align:right">AMOUNT</th><th></th></tr></thead><tbody id="txBody"></tbody></table><div class="empty" id="emptyState" hidden>No transactions found. Add your first transaction to get started.</div></div>
       </section>
+      <section class="card data-card" id="dataCard">
+        <div class="section-head"><h3>Backup &amp; restore</h3><span id="lastBackup">No backup yet</span></div>
+        <p class="data-note">Your transactions are stored only in this browser, on this device. Download a backup file now and then, so you can restore your data or move it to another device.</p>
+        <div class="data-actions">
+          <button class="primary" id="exportBtn">⬇ Export backup</button>
+          <button class="ghost-btn" id="importBtn">⬆ Import backup</button>
+          <button class="ghost-btn" id="undoImportBtn" hidden>↩ Undo last import</button>
+          <input type="file" id="importFile" accept=".json,application/json,text/plain" hidden>
+        </div>
+      </section>
     </main>
     <aside class="side">
       <div class="card"><div class="budget-top"><h3>Monthly budget</h3><span class="stat-icon">◎</span></div><div class="budget-number" id="budgetSpent">₹0 <span style="font-size:12px;color:var(--muted);font-weight:500">/ ₹20,000</span></div><div class="budget-track"><i id="budgetBar" style="width:0%"></i></div><div class="budget-note" id="budgetNote">Set a budget and keep your spending in check.</div><button class="ghost-btn" style="width:100%;margin-top:14px" id="editBudget">Edit monthly budget</button></div>
@@ -42,7 +79,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
       <div class="card"><div class="section-head"><h3>Your snapshot</h3><span>Monthly</span></div><p class="insight" id="insight">Add transactions to see your financial snapshot.</p></div>
     </aside>
   </div>
-  <div class="footer">PULSE · Your money, made clearer. Data is stored locally in this browser.</div>
+  <div class="footer">PULSE · Your money, made clearer. Data is stored locally in this browser.<div><button class="ghost-btn install-btn" id="installBtn" hidden>📲 Install PULSE on this device</button></div></div>
 </div>
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
@@ -58,6 +95,17 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
       </div>
       <div class="modal-actions"><button type="button" class="cancel" id="cancelModal">Cancel</button><button type="submit" class="primary">Save transaction</button></div>
     </form>
+  </div>
+</div>
+<div class="modal-backdrop" id="importBackdrop">
+  <div class="modal">
+    <div class="modal-head"><h3>Import backup</h3><button class="close" id="closeImport" aria-label="Close">×</button></div>
+    <div id="importBody"></div>
+    <div class="modal-actions">
+      <button type="button" class="cancel" id="importCancel">Cancel</button>
+      <button type="button" class="primary" id="importMerge">Add new only</button>
+      <button type="button" class="danger-btn" id="importReplace">Replace all</button>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -76,7 +124,7 @@ let transactions = [];
 try { transactions = JSON.parse(localStorage.getItem("pulse_transactions") || "[]"); if(!Array.isArray(transactions)) transactions=[]; } catch(e) { transactions=[]; }
 let budget = Number(localStorage.getItem("pulse_budget")) || 20000;
 let selectedType = "expense", editingId = null;
-const save = () => localStorage.setItem("pulse_transactions",JSON.stringify(transactions));
+const save = () => { try { localStorage.setItem("pulse_transactions",JSON.stringify(transactions)); } catch(e) { toast("Couldn't save — your browser storage may be full."); } };
 const monthTx = () => transactions.filter(t=>monthKey(t.date)===monthKey(isoToday(today)));
 const sum = (arr,type) => arr.filter(t=>t.type===type).reduce((a,t)=>a+Number(t.amount),0);
 const catIcon = (cat,type) => (CATEGORIES[type]||[]).find(c=>c[0]===cat)?.[1] || "📦";
@@ -101,7 +149,7 @@ function render(){
   const cats=Object.entries(grouped).sort((a,b)=>b[1]-a[1]);
   $("categoryList").innerHTML=cats.length?cats.slice(0,5).map(([c,v])=>`<div class="cat-row"><div class="cat-icon">${catIcon(c,"expense")}</div><div><div class="cat-name">${escapeHtml(c)}</div><div class="bar"><i style="width:${exp?Math.max(3,v/exp*100):0}%"></i></div></div><div class="cat-value">${money(v)}</div></div>`).join(""):'<div class="empty">No spending categories yet.</div>';
   $("insight").innerHTML=m.length?`You've recorded <strong>${m.length} transaction${m.length===1?"":"s"}</strong> this month. Your net cash flow is <strong class="${inc-exp>=0?"positive":"negative"}">${money(inc-exp)}</strong>. ${exp>budget?"Consider reviewing your spending this month.":"Keep tracking to understand your money habits."}`:'Add transactions to see your financial snapshot.';
-  renderTransactions();drawChart();
+  renderTransactions();drawChart();updateDataUI();
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function renderTransactions(){
@@ -154,7 +202,211 @@ $("search").addEventListener("input",renderTransactions);$("filterType").addEven
 $("editBudget").onclick=()=>{const val=prompt("Enter your monthly expense budget (₹):",budget);if(val===null)return;const n=Number(val);if(Number.isFinite(n)&&n>0){budget=n;localStorage.setItem("pulse_budget",String(budget));render();toast("Monthly budget updated.");}else toast("Enter a valid amount.");};
 function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").classList.remove("show"),2200);}
 window.addEventListener("resize",()=>{clearTimeout(window.resizeTimer);window.resizeTimer=setTimeout(drawChart,120);});
+
+/* ===================== DATA MANAGEMENT (PWA upgrade) ===================== */
+const BACKUP_APP = "PULSE", BACKUP_VERSION = 1;
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024, MAX_IMPORT_ROWS = 50000;
+const LAST_BACKUP_KEY = "pulse_last_backup", UNDO_KEY = "pulse_undo_snapshot";
+
+/* IMPORT-CORE START (pure functions: they only check data, they never touch the screen) */
+const ID_RE = /^[A-Za-z0-9_-]{1,40}$/, DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+let idCounter = 0;
+const newId = () => String(Date.now()) + "-" + (++idCounter).toString(36) + Math.random().toString(36).slice(2, 5);
+const txSignature = t => [t.type, t.date, Number(t.amount), t.title, t.category, t.note || ""].join("|");
+function validDate(s){
+  if(typeof s !== "string" || !DATE_RE.test(s)) return false;
+  const [y, m, d] = s.split("-").map(Number);
+  if(y < 1990 || y > 2100) return false;
+  const x = new Date(y, m - 1, d, 12);
+  return x.getFullYear() === y && x.getMonth() === m - 1 && x.getDate() === d;
+}
+function cleanTransaction(r){
+  if(!r || typeof r !== "object" || Array.isArray(r)) return null;
+  const title = typeof r.title === "string" ? r.title.trim().slice(0, 55) : "";
+  let amount = r.amount;
+  if(typeof amount === "string" && amount.trim() !== "") amount = Number(amount);
+  if(typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > 1e12) return null;
+  const type = r.type;
+  if(type !== "income" && type !== "expense") return null;
+  if(!title || !validDate(r.date)) return null;
+  let category = typeof r.category === "string" ? r.category.trim() : "";
+  if(!CATEGORIES[type].some(c => c[0] === category)) category = "Other";
+  const note = typeof r.note === "string" ? r.note.trim().slice(0, 100) : "";
+  let id = (typeof r.id === "string" || typeof r.id === "number") ? String(r.id) : "";
+  if(!ID_RE.test(id)) id = "";
+  return {id, title, amount, date: r.date, type, category, note};
+}
+function parseBackup(text){
+  let data;
+  try { data = JSON.parse(text); } catch(e) { return {error: "This file isn't valid JSON. Please choose a PULSE backup file."}; }
+  let rows, budgetIn = null, exportedAt = null;
+  if(Array.isArray(data)) rows = data;
+  else if(data && typeof data === "object"){
+    if(data.app !== BACKUP_APP) return {error: "This doesn't look like a PULSE backup file."};
+    if(typeof data.version === "number" && data.version > BACKUP_VERSION) return {error: "This backup was made by a newer version of PULSE. Please update the app first."};
+    rows = data.transactions; budgetIn = data.budget;
+    exportedAt = typeof data.exportedAt === "string" ? data.exportedAt : null;
+  } else return {error: "This doesn't look like a PULSE backup file."};
+  if(!Array.isArray(rows)) return {error: "No transactions list was found in this file."};
+  if(rows.length > MAX_IMPORT_ROWS) return {error: "This file has too many transactions to import safely."};
+  const valid = [], seenIds = new Map(), noOwnId = new Set(); let skipped = 0;
+  for(const r of rows){
+    const t = cleanTransaction(r);
+    if(!t){ skipped++; continue; }
+    if(!t.id){ t.id = newId(); noOwnId.add(t); }
+    else if(seenIds.has(t.id)){
+      if(txSignature(seenIds.get(t.id)) === txSignature(t)){ skipped++; continue; }   // exact repeat of the same record
+      t.id = newId();                                                                  // same id, different details: keep both
+    }
+    seenIds.set(t.id, t); valid.push(t);
+  }
+  const b = Number(budgetIn);
+  return {valid, noOwnId, skipped, exportedAt, budget: (Number.isFinite(b) && b > 0 && b <= 1e12) ? b : null};
+}
+function planImport(valid, current, noOwnId = new Set()){
+  const byId = new Map(current.map(t => [String(t.id), t]));
+  const sigs = new Set(current.map(t => txSignature({...t, note: t.note || ""})));
+  const fresh = []; let dup = 0, conflicts = 0;
+  for(const t of valid){
+    if(noOwnId.has(t)){ if(sigs.has(txSignature(t))) dup++; else fresh.push(t); continue; }   // no stable id: compare by content
+    const ex = byId.get(t.id);
+    if(!ex){ fresh.push(t); continue; }
+    dup++;
+    if(ex.title !== t.title || Number(ex.amount) !== t.amount || ex.date !== t.date || ex.type !== t.type || ex.category !== t.category || (ex.note || "") !== t.note) conflicts++;
+  }
+  return {fresh, dup, conflicts};
+}
+/* IMPORT-CORE END */
+
+function safeGet(k){ try { return localStorage.getItem(k); } catch(e) { return null; } }
+function updateDataUI(){
+  const el = $("lastBackup"), last = safeGet(LAST_BACKUP_KEY), dt = last ? new Date(last) : null;
+  if(dt && !isNaN(dt)){ el.textContent = "Last backup: " + prettyDate(isoToday(dt)); el.classList.remove("warn-text"); }
+  else { el.textContent = transactions.length ? "No backup yet" : "Nothing to back up yet"; el.classList.toggle("warn-text", transactions.length > 0); }
+  $("undoImportBtn").hidden = !safeGet(UNDO_KEY);
+}
+
+function exportBackup(){
+  if(!transactions.length){ toast("Nothing to back up yet."); return; }
+  const payload = {app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(), budget, count: transactions.length, transactions};
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = `pulse-backup-${isoToday(new Date())}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  try { localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString()); } catch(e) {}
+  updateDataUI(); toast("Backup file created — check your Downloads.");
+}
+
+let pendingImport = null;
+function openImport(){ $("importBackdrop").classList.add("show"); }
+function closeImport(){ $("importBackdrop").classList.remove("show"); pendingImport = null; }
+function showImportError(msg){
+  pendingImport = null;
+  $("importBody").innerHTML = `<p class="import-error">${escapeHtml(msg)}</p><p class="import-help" style="margin-top:10px">Nothing was changed.</p>`;
+  $("importMerge").hidden = true; $("importReplace").hidden = true; $("importCancel").textContent = "Close";
+  openImport();
+}
+function showImportPreview(){
+  const p = pendingImport, plan = p.plan, cur = transactions.length;
+  const when = p.exportedAt && !isNaN(new Date(p.exportedAt)) ? prettyDate(isoToday(new Date(p.exportedAt))) : "unknown";
+  const rows = [
+    ["File", escapeHtml(p.name)], ["Backup made", when],
+    ["Valid transactions in file", String(p.valid.length)]
+  ];
+  if(p.skipped) rows.push(["Skipped (invalid or repeated)", String(p.skipped)]);
+  rows.push(["Currently in PULSE", String(cur)], ["New to PULSE", String(plan.fresh.length)]);
+  if(plan.dup) rows.push(["Already in PULSE", String(plan.dup)]);
+  if(plan.conflicts) rows.push(["…changed since this backup", String(plan.conflicts)]);
+  let help;
+  if(cur === 0) help = `<p class="import-help">PULSE is empty, so this will simply load the transactions from the file${p.budget ? " and its monthly budget" : ""}.</p>`;
+  else {
+    help = `<p class="import-help"><b>Add new only</b> keeps everything you have and adds just the new transactions. This is the safe choice.</p>
+            <p class="import-help"><b>Replace all</b> swaps your ${cur} current transaction${cur===1?"":"s"} for the ${p.valid.length} in the file${p.budget ? " and restores its budget" : ""}.</p>`;
+    if(!plan.fresh.length) help += `<p class="import-help">Everything in this file is already in PULSE.</p>`;
+  }
+  help += `<p class="import-help">A safety copy of your current data is kept, so you can undo the import.</p>`;
+  $("importBody").innerHTML = `<div class="import-box"><dl>${rows.map(r => `<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join("")}</dl></div>${help}`;
+  $("importCancel").textContent = "Cancel";
+  const empty = cur === 0;
+  $("importMerge").hidden = false; $("importMerge").textContent = empty ? "Import" : "Add new only";
+  $("importMerge").disabled = !empty && plan.fresh.length === 0;
+  $("importReplace").hidden = empty;
+  openImport();
+}
+function applyImport(mode){
+  const p = pendingImport; if(!p) return;
+  if(mode === "replace" && transactions.length && !confirm(`Replace your ${transactions.length} current transactions with the ${p.valid.length} from this backup?\n\nA safety copy is kept, so you can undo this.`)) return;
+  const before = {savedAt: new Date().toISOString(), budget, transactions};
+  try { localStorage.setItem(UNDO_KEY, JSON.stringify(before)); }
+  catch(e) { closeImport(); toast("Not enough storage to import safely. Nothing was changed."); return; }
+  const nextTx = mode === "replace" ? p.valid : [...transactions, ...p.plan.fresh];
+  const nextBudget = mode === "replace" && p.budget ? p.budget : budget;
+  try {
+    localStorage.setItem("pulse_transactions", JSON.stringify(nextTx));
+    localStorage.setItem("pulse_budget", String(nextBudget));
+  } catch(e) {
+    try { localStorage.setItem("pulse_transactions", JSON.stringify(transactions)); localStorage.setItem("pulse_budget", String(budget)); } catch(_) {}
+    closeImport(); toast("Import failed. Your data was not changed."); return;
+  }
+  const added = p.plan.fresh.length;
+  transactions = nextTx; budget = nextBudget;
+  closeImport(); render();
+  toast(mode === "replace" ? `Restored ${nextTx.length} transactions.` : `Added ${added} new transaction${added===1?"":"s"}.`);
+}
+
+$("exportBtn").onclick = exportBackup;
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").addEventListener("change", async e => {
+  const file = e.target.files[0]; e.target.value = ""; if(!file) return;
+  if(file.size > MAX_IMPORT_BYTES){ showImportError("That file is too large to be a PULSE backup."); return; }
+  let text; try { text = await file.text(); } catch(err) { showImportError("Couldn't read that file."); return; }
+  const parsed = parseBackup(text);
+  if(parsed.error){ showImportError(parsed.error); return; }
+  if(!parsed.valid.length){ showImportError("No valid transactions were found in this file."); return; }
+  pendingImport = {...parsed, name: file.name, plan: planImport(parsed.valid, transactions, parsed.noOwnId)};
+  showImportPreview();
+});
+$("importMerge").onclick = () => applyImport(transactions.length ? "merge" : "replace");
+$("importReplace").onclick = () => applyImport("replace");
+$("importCancel").onclick = closeImport; $("closeImport").onclick = closeImport;
+$("importBackdrop").addEventListener("click", e => { if(e.target === $("importBackdrop")) closeImport(); });
+$("undoImportBtn").onclick = () => {
+  let snap = null; try { snap = JSON.parse(safeGet(UNDO_KEY)); } catch(e) {}
+  if(!snap || !Array.isArray(snap.transactions)){ toast("Nothing to undo."); updateDataUI(); return; }
+  const d = snap.savedAt && !isNaN(new Date(snap.savedAt)) ? prettyDate(isoToday(new Date(snap.savedAt))) : "earlier";
+  if(!confirm(`Undo the last import? PULSE will go back to the ${snap.transactions.length} transactions it had on ${d}.`)) return;
+  transactions = snap.transactions; const b = Number(snap.budget); if(Number.isFinite(b) && b > 0) budget = b;
+  save(); try { localStorage.setItem("pulse_budget", String(budget)); localStorage.removeItem(UNDO_KEY); } catch(e) {}
+  render(); toast("Import undone.");
+};
+/* ===================== END DATA MANAGEMENT ===================== */
+
 init();
+
+/* ===================== PWA (service worker, install, storage) ===================== */
+if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if(nw) nw.addEventListener("statechange", () => {
+          if(nw.state === "installed" && navigator.serviceWorker.controller) toast("New version ready. Reopen PULSE to use it.");
+        });
+      });
+    }).catch(() => {});
+  });
+}
+let deferredInstall = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; $("installBtn").hidden = false; });
+$("installBtn").onclick = async () => {
+  if(!deferredInstall) return;
+  deferredInstall.prompt();
+  try { await deferredInstall.userChoice; } catch(e) {}
+  deferredInstall = null; $("installBtn").hidden = true;
+};
+window.addEventListener("appinstalled", () => { $("installBtn").hidden = true; toast("PULSE installed."); });
+if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 </script>
 </body>
 </html>
