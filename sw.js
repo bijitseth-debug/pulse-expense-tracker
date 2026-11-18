@@ -7,7 +7,7 @@
  * When you change any file of the app, bump CACHE_NAME (pulse-v1 -> pulse-v2)
  * so old copies are cleaned up.
  */
-const CACHE_NAME = "pulse-v1";
+const CACHE_NAME = "pulse-v2";
 const INDEX_URL = new URL("./index.html", self.registration.scope).href;
 const PRECACHE = [
   "./index.html",
