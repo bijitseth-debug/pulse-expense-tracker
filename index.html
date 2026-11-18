@@ -45,6 +45,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
     <div class="brand"><div class="logo">P</div><div><h1>PULSE</h1><small>PERSONAL FINANCE</small></div></div>
     <div class="top-actions"><div class="date-pill" id="todayLabel"></div><button class="primary" id="addTop">＋ Add transaction</button></div>
   </header>
+  <div id="updateTestBanner" style="background:#f5c542;color:#1a1300;font-weight:800;text-align:center;padding:10px;border-radius:12px;margin:0 0 16px;letter-spacing:.5px">UPDATE TEST V2</div>
   <div class="layout">
     <main class="main">
       <div class="welcome"><div><h2>Good to see you.</h2><p>Here's what's happening with your money.</p></div><div class="period" id="periodLabel"></div></div>
@@ -71,7 +72,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
           <button class="ghost-btn" id="undoImportBtn" hidden>↩ Undo last import</button>
           <input type="file" id="importFile" accept=".json,application/json,text/plain" hidden>
         </div>
-      </section>
+        </section>
     </main>
     <aside class="side">
       <div class="card"><div class="budget-top"><h3>Monthly budget</h3><span class="stat-icon">◎</span></div><div class="budget-number" id="budgetSpent">₹0 <span style="font-size:12px;color:var(--muted);font-weight:500">/ ₹20,000</span></div><div class="budget-track"><i id="budgetBar" style="width:0%"></i></div><div class="budget-note" id="budgetNote">Set a budget and keep your spending in check.</div><button class="ghost-btn" style="width:100%;margin-top:14px" id="editBudget">Edit monthly budget</button></div>
@@ -236,7 +237,7 @@ function cleanTransaction(r){
   if(!ID_RE.test(id)) id = "";
   return {id, title, amount, date: r.date, type, category, note};
 }
-function parseBackup(text){
+  function parseBackup(text){
   let data;
   try { data = JSON.parse(text); } catch(e) { return {error: "This file isn't valid JSON. Please choose a PULSE backup file."}; }
   let rows, budgetIn = null, exportedAt = null;
@@ -307,7 +308,7 @@ function showImportError(msg){
   $("importMerge").hidden = true; $("importReplace").hidden = true; $("importCancel").textContent = "Close";
   openImport();
 }
-function showImportPreview(){
+  function showImportPreview(){
   const p = pendingImport, plan = p.plan, cur = transactions.length;
   const when = p.exportedAt && !isNaN(new Date(p.exportedAt)) ? prettyDate(isoToday(new Date(p.exportedAt))) : "unknown";
   const rows = [
@@ -380,7 +381,7 @@ $("undoImportBtn").onclick = () => {
   save(); try { localStorage.setItem("pulse_budget", String(budget)); localStorage.removeItem(UNDO_KEY); } catch(e) {}
   render(); toast("Import undone.");
 };
-/* ===================== END DATA MANAGEMENT ===================== */
+  /* ===================== END DATA MANAGEMENT ===================== */
 
 init();
 
