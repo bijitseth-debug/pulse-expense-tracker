@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1020">
-<meta name="description" content="PULSE — a private personal expense tracker that works offline.">
+<meta name="description" content="PULSE — a personal expense tracker that works offline.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -72,7 +72,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
           <input type="file" id="importFile" accept=".json,application/json,text/plain" hidden>
         </div>
       </section>
-      </main>
+    </main>
     <aside class="side">
       <div class="card"><div class="budget-top"><h3>Monthly budget</h3><span class="stat-icon">◎</span></div><div class="budget-number" id="budgetSpent">₹0 <span style="font-size:12px;color:var(--muted);font-weight:500">/ ₹20,000</span></div><div class="budget-track"><i id="budgetBar" style="width:0%"></i></div><div class="budget-note" id="budgetNote">Set a budget and keep your spending in check.</div><button class="ghost-btn" style="width:100%;margin-top:14px" id="editBudget">Edit monthly budget</button></div>
       <div class="card"><h3 class="quick-title">Quick actions</h3><div class="quick-actions"><button class="quick" id="quickExpense"><span>↘</span><b>Add expense</b><small>Record spending</small></button><button class="quick" id="quickIncome"><span>↗</span><b>Add income</b><small>Record earnings</small></button></div></div>
@@ -97,6 +97,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
     </form>
   </div>
 </div>
+  
 <div class="modal-backdrop" id="importBackdrop">
   <div class="modal">
     <div class="modal-head"><h3>Import backup</h3><button class="close" id="closeImport" aria-label="Close">×</button></div>
@@ -122,7 +123,7 @@ const monthKey = d => {const x=new Date(d+"T12:00:00");return `${x.getFullYear()
 const prettyDate = d => new Date(d+"T12:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
 let transactions = [];
 try { transactions = JSON.parse(localStorage.getItem("pulse_transactions") || "[]"); if(!Array.isArray(transactions)) transactions=[]; } catch(e) { transactions=[]; }
-let budget = Number(localStorage.getItem("pulse_budget")) || 20000;
+let budget = (() => { try { const b = Number(localStorage.getItem("pulse_budget")); if(Number.isFinite(b) && b > 0 && b <= 1e12) return b; } catch(e) {} return 20000; })();
 let selectedType = "expense", editingId = null;
 const save = () => { try { localStorage.setItem("pulse_transactions",JSON.stringify(transactions)); } catch(e) { toast("Couldn't save — your browser storage may be full."); } };
 const monthTx = () => transactions.filter(t=>monthKey(t.date)===monthKey(isoToday(today)));
@@ -151,12 +152,12 @@ function render(){
   $("insight").innerHTML=m.length?`You've recorded <strong>${m.length} transaction${m.length===1?"":"s"}</strong> this month. Your net cash flow is <strong class="${inc-exp>=0?"positive":"negative"}">${money(inc-exp)}</strong>. ${exp>budget?"Consider reviewing your spending this month.":"Keep tracking to understand your money habits."}`:'Add transactions to see your financial snapshot.';
   renderTransactions();drawChart();updateDataUI();
 }
-  function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function renderTransactions(){
   const q=$("search").value.toLowerCase(),type=$("filterType").value,cat=$("filterCategory").value;
   const list=[...transactions].sort((a,b)=>b.date.localeCompare(a.date)).filter(t=>(!q||(t.title+" "+t.category+" "+(t.note||"")).toLowerCase().includes(q))&&(type==="all"||t.type===type)&&(cat==="all"||t.category===cat));
   $("txCount").textContent=`${list.length} record${list.length===1?"":"s"}`;$("emptyState").hidden=list.length!==0;
-  $("txBody").innerHTML=list.map(t=>`<tr><td><div class="tx-name"><span class="tx-badge">${catIcon(t.category,t.type)}</span><span>${escapeHtml(t.title)}<span class="tx-meta" style="display:block">${escapeHtml(t.note||t.type)}</span></span></div></td><td>${prettyDate(t.date)}</td><td>${escapeHtml(t.category)}</td><td class="tx-amount ${t.type==="income"?"positive":"negative"}">${t.type==="income"?"+":"−"}${money(t.amount)}</td><td><div class="actions"><button class="icon-btn" data-edit="${t.id}" title="Edit">✎</button><button class="icon-btn" data-delete="${t.id}" title="Delete">×</button></div></td></tr>`).join("");
+  $("txBody").innerHTML=list.map(t=>`<tr><td><div class="tx-name"><span class="tx-badge">${catIcon(t.category,t.type)}</span><span>${escapeHtml(t.title)}<span class="tx-meta" style="display:block">${escapeHtml(t.note||t.type)}</span></span></div></td><td>${prettyDate(t.date)}</td><td>${escapeHtml(t.category)}</td><td class="tx-amount ${t.type==="income"?"positive":"negative"}">${t.type==="income"?"+":"−"}${money(t.amount)}</td><td><div class="actions"><button class="icon-btn" data-edit="${escapeHtml(t.id)}" title="Edit">✎</button><button class="icon-btn" data-delete="${escapeHtml(t.id)}" title="Delete">×</button></div></td></tr>`).join("");
 }
 function drawChart(){
   const canvas=$("flowChart"),rect=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
@@ -199,7 +200,11 @@ $("addTop").onclick=()=>openModal();$("quickExpense").onclick=()=>openModal("exp
 $("closeModal").onclick=closeModal;$("cancelModal").onclick=closeModal;
 $("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal();});
 $("search").addEventListener("input",renderTransactions);$("filterType").addEventListener("change",renderTransactions);$("filterCategory").addEventListener("change",renderTransactions);
-$("editBudget").onclick=()=>{const val=prompt("Enter your monthly expense budget (₹):",budget);if(val===null)return;const n=Number(val);if(Number.isFinite(n)&&n>0){budget=n;localStorage.setItem("pulse_budget",String(budget));render();toast("Monthly budget updated.");}else toast("Enter a valid amount.");};
+$("editBudget").onclick=()=>{const val=prompt("Enter your monthly expense budget (₹):",budget);if(val===null)return;const n=Number(val);
+  if(!(Number.isFinite(n)&&n>0)){toast("Enter a valid amount.");return;}
+  if(n>1e12){toast("Budget is too large. Enter ₹1,000,000,000,000 or less.");return;}
+  try{localStorage.setItem("pulse_budget",String(n));}catch(e){toast("Couldn't save the budget — your browser storage may be full.");return;}
+  budget=n;render();toast("Monthly budget updated.");};
 function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>$("toast").classList.remove("show"),2200);}
 window.addEventListener("resize",()=>{clearTimeout(window.resizeTimer);window.resizeTimer=setTimeout(drawChart,120);});
 
@@ -216,7 +221,7 @@ const txSignature = t => [t.type, t.date, Number(t.amount), t.title, t.category,
 function validDate(s){
   if(typeof s !== "string" || !DATE_RE.test(s)) return false;
   const [y, m, d] = s.split("-").map(Number);
-  if(y < 1990 || y > 2100) return false;
+  if(y < 1000 || y > 9999) return false;
   const x = new Date(y, m - 1, d, 12);
   return x.getFullYear() === y && x.getMonth() === m - 1 && x.getDate() === d;
 }
@@ -262,7 +267,7 @@ function parseBackup(text){
   }
   const b = Number(budgetIn);
   return {valid, noOwnId, skipped, exportedAt, budget: (Number.isFinite(b) && b > 0 && b <= 1e12) ? b : null};
-  }  
+}
 function planImport(valid, current, noOwnId = new Set()){
   const byId = new Map(current.map(t => [String(t.id), t]));
   const sigs = new Set(current.map(t => txSignature({...t, note: t.note || ""})));
@@ -277,6 +282,18 @@ function planImport(valid, current, noOwnId = new Set()){
   return {fresh, dup, conflicts};
 }
 /* IMPORT-CORE END */
+
+// Validates transactions read from LocalStorage. Reuses cleanTransaction(); one bad record never affects the others.
+function sanitizeStoredTransactions(list){
+  const out = [], seen = new Set(); let rejected = 0;
+  for(const r of (Array.isArray(list) ? list : [])){
+    let t = null; try { t = cleanTransaction(r); } catch(e) { t = null; }
+    if(!t){ rejected++; continue; }
+    while(!t.id || seen.has(t.id)) t.id = newId();      // missing, unsafe or duplicate id -> fresh safe id (record kept)
+    seen.add(t.id); out.push(t);
+  }
+  return {list: out, rejected};
+}
 
 function safeGet(k){ try { return localStorage.getItem(k); } catch(e) { return null; } }
 function updateDataUI(){
@@ -297,8 +314,7 @@ function exportBackup(){
   try { localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString()); } catch(e) {}
   updateDataUI(); toast("Backup file created — check your Downloads.");
 }
-
-let pendingImport = null;
+  let pendingImport = null;
 function openImport(){ $("importBackdrop").classList.add("show"); }
 function closeImport(){ $("importBackdrop").classList.remove("show"); pendingImport = null; }
 function showImportError(msg){
@@ -376,12 +392,20 @@ $("undoImportBtn").onclick = () => {
   if(!snap || !Array.isArray(snap.transactions)){ toast("Nothing to undo."); updateDataUI(); return; }
   const d = snap.savedAt && !isNaN(new Date(snap.savedAt)) ? prettyDate(isoToday(new Date(snap.savedAt))) : "earlier";
   if(!confirm(`Undo the last import? PULSE will go back to the ${snap.transactions.length} transactions it had on ${d}.`)) return;
-  transactions = snap.transactions; const b = Number(snap.budget); if(Number.isFinite(b) && b > 0) budget = b;
+  transactions = sanitizeStoredTransactions(snap.transactions).list; const b = Number(snap.budget); if(Number.isFinite(b) && b > 0 && b <= 1e12) budget = b;
   save(); try { localStorage.setItem("pulse_budget", String(budget)); localStorage.removeItem(UNDO_KEY); } catch(e) {}
   render(); toast("Import undone.");
 };
-/* ===================== END DATA MANAGEMENT ===================== */
+  /* ===================== END DATA MANAGEMENT ===================== */
 
+{ const storedBefore = safeGet("pulse_transactions"); let storedWasList = false;
+  try { storedWasList = Array.isArray(JSON.parse(storedBefore)); } catch(e) {}
+  const startup = sanitizeStoredTransactions(transactions);
+  const changed = storedWasList && JSON.stringify(transactions) !== JSON.stringify(startup.list);
+  transactions = startup.list;
+  if(startup.rejected) toast(`${startup.rejected} invalid saved record${startup.rejected===1?"":"s"} ignored.`);
+  if(changed) save();   // write the cleaned list back; save() handles storage errors and the in-memory list stays intact
+}
 init();
 
 /* ===================== PWA (service worker, install, storage) ===================== */
