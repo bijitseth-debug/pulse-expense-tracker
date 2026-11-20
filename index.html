@@ -94,8 +94,8 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
     <form id="transactionForm">
       <div class="form-grid">
         <div class="field full"><label for="txTitle">Description</label><input id="txTitle" maxlength="55" placeholder="e.g. Lunch with friends" required></div>
-        <div class="field"><label for="txAmount">Amount (₹)</label><input id="txAmount" type="number" min="1" step="0.01" placeholder="500" required></div>
-        <div class="field"><label for="txDate">Date</label><input id="txDate" type="date" required></div>
+        <div class="field"><label for="txAmount">Amount (₹)</label><input id="txAmount" type="number" min="0" max="1000000000000" step="any" placeholder="500" required></div>
+        <div class="field"><label for="txDate">Date</label><input id="txDate" type="date" min="1000-01-01" max="9999-12-31" required></div>
         <div class="field full"><label for="txCategory">Category</label><select id="txCategory"></select></div>
         <div class="field full"><label for="txNote">Note (optional)</label><input id="txNote" maxlength="100" placeholder="Add a little detail…"></div>
       </div>
@@ -103,8 +103,8 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
     </form>
   </div>
 </div>
-  
-<div class="modal-backdrop" id="importBackdrop">
+
+  <div class="modal-backdrop" id="importBackdrop">
   <div class="modal">
     <div class="modal-head"><h3>Import backup</h3><button class="close" id="closeImport" aria-label="Close">×</button></div>
     <div id="importBody"></div>
@@ -191,8 +191,9 @@ function closeModal(){$("modalBackdrop").classList.remove("show");}
 document.querySelectorAll(".type-switch button").forEach(b=>b.addEventListener("click",()=>{selectedType=b.dataset.type;document.querySelectorAll(".type-switch button").forEach(x=>x.classList.toggle("active",x===b));populateCategories();}));
 $("transactionForm").addEventListener("submit",e=>{
   e.preventDefault();const title=$("txTitle").value.trim(),amount=Number($("txAmount").value),date=$("txDate").value;
-  if(!title||!Number.isFinite(amount)||amount<=0||!date){toast("Please enter valid transaction details.");return;}
-  const item={id:editingId||String(Date.now()),title,amount,date,type:selectedType,category:$("txCategory").value,note:$("txNote").value.trim()};
+  const problem=transactionProblem(title,amount,date);if(problem){toast(problem);return;}
+  const item=cleanTransaction({id:editingId||String(Date.now()),title,amount,date,type:selectedType,category:$("txCategory").value,note:$("txNote").value.trim()});
+  if(!item||!item.id){toast("Please enter valid transaction details.");return;}
   if(editingId){transactions=transactions.map(t=>t.id===editingId?item:t);toast("Transaction updated.");}
   else{transactions.push(item);toast("Transaction added.");}
   save();closeModal();render();
@@ -217,6 +218,7 @@ window.addEventListener("resize",()=>{clearTimeout(window.resizeTimer);window.re
 /* ===================== DATA MANAGEMENT (PWA upgrade) ===================== */
 const BACKUP_APP = "PULSE", BACKUP_VERSION = 1;
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024, MAX_IMPORT_ROWS = 50000;
+const MAX_AMOUNT = 1e12, MIN_YEAR = 1000, MAX_YEAR = 9999;   // transaction limits: used by the validator AND the add/edit form
 const LAST_BACKUP_KEY = "pulse_last_backup", UNDO_KEY = "pulse_undo_snapshot";
 
 /* IMPORT-CORE START (pure functions: they only check data, they never touch the screen) */
@@ -227,7 +229,7 @@ const txSignature = t => [t.type, t.date, Number(t.amount), t.title, t.category,
 function validDate(s){
   if(typeof s !== "string" || !DATE_RE.test(s)) return false;
   const [y, m, d] = s.split("-").map(Number);
-  if(y < 1000 || y > 9999) return false;
+  if(y < MIN_YEAR || y > MAX_YEAR) return false;
   const x = new Date(y, m - 1, d, 12);
   return x.getFullYear() === y && x.getMonth() === m - 1 && x.getDate() === d;
 }
@@ -236,7 +238,7 @@ function cleanTransaction(r){
   const title = typeof r.title === "string" ? r.title.trim().slice(0, 55) : "";
   let amount = r.amount;
   if(typeof amount === "string" && amount.trim() !== "") amount = Number(amount);
-  if(typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > 1e12) return null;
+  if(typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > MAX_AMOUNT) return null;
   const type = r.type;
   if(type !== "income" && type !== "expense") return null;
   if(!title || !validDate(r.date)) return null;
@@ -246,6 +248,16 @@ function cleanTransaction(r){
   let id = (typeof r.id === "string" || typeof r.id === "number") ? String(r.id) : "";
   if(!ID_RE.test(id)) id = "";
   return {id, title, amount, date: r.date, type, category, note};
+}
+// Says what is wrong with a form entry, using the same limits as cleanTransaction(); "" means the entry looks fine.
+function transactionProblem(title, amount, date){
+  if(!title) return "Enter a description.";
+  if(!Number.isFinite(amount) || amount <= 0) return "Enter an amount greater than 0.";
+  if(amount > MAX_AMOUNT) return "Amount is too large. Enter ₹1,000,000,000,000 or less.";
+  const yearPart = /^(\d+)-/.exec(date || ""), year = yearPart ? Number(yearPart[1]) : NaN;
+  if(Number.isFinite(year) && (year < MIN_YEAR || year > MAX_YEAR)) return `Year must be between ${MIN_YEAR} and ${MAX_YEAR}.`;
+  if(!validDate(date)) return "Enter a valid date.";
+  return "";
 }
 function parseBackup(text){
   let data;
@@ -289,7 +301,7 @@ function planImport(valid, current, noOwnId = new Set()){
 }
 /* IMPORT-CORE END */
 
-// Validates transactions read from LocalStorage. Reuses cleanTransaction(); one bad record never affects the others.
+  // Validates transactions read from LocalStorage. Reuses cleanTransaction(); one bad record never affects the others.
 function sanitizeStoredTransactions(list){
   const out = [], seen = new Set(); let rejected = 0;
   for(const r of (Array.isArray(list) ? list : [])){
