@@ -413,8 +413,8 @@ function showImportPreview(){
   $("importMerge").disabled = !empty && plan.fresh.length === 0;
   $("importReplace").hidden = empty;
   openImport();
+
 }
-  }
 function applyImport(mode){
   const p = pendingImport; if(!p) return;
   if(!confirmOverwriteOfProtectedData()) return;
