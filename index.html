@@ -37,6 +37,9 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
 .modal-actions{flex-wrap:wrap}
 .primary:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
 .install-btn{margin-top:8px;font-size:12px;padding:8px 12px}
+/* M4: on narrow screens the Edit/Delete column stays visible while the table scrolls sideways; larger touch targets on touch screens */
+@media(max-width:700px){th:last-child,td:last-child{position:sticky;right:0;background:#131c30;box-shadow:-12px 0 10px -8px #000a}}
+@media(pointer:coarse){.icon-btn{min-width:44px;min-height:44px;font-size:17px}}
 </style>
 </head>
 <body>
@@ -104,7 +107,8 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1440px;mar
   </div>
 </div>
 
-    <div class="modal-backdrop" id="importBackdrop">
+
+ <div class="modal-backdrop" id="importBackdrop">
   <div class="modal">
     <div class="modal-head"><h3>Import backup</h3><button class="close" id="closeImport" aria-label="Close">×</button></div>
     <div id="importBody"></div>
@@ -122,18 +126,59 @@ const CATEGORIES = {
   income:[["Salary","💼"],["Allowance","💵"],["Freelance","💻"],["Gift","🎁"],["Other","✨"]]
 };
 const $ = id => document.getElementById(id);
-const money = n => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(n||0);
+const money = n => { const v = n||0; return Number.isFinite(v) ? new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(v) : "—"; };
+const MAX_SAFE_TOTAL = Number.MAX_SAFE_INTEGER / 100; // keeps paise-level totals within JavaScript safe-integer precision
+const cents = x => Number.isFinite(x) && Math.abs(x) <= MAX_SAFE_TOTAL ? Math.round(x*100)/100 : x; // removes floating-point drift without rounding unsafe totals
 const today = new Date();
 const isoToday = d => {const x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`};
 const monthKey = d => {const x=new Date(d+"T12:00:00");return `${x.getFullYear()}-${x.getMonth()}`};
 const prettyDate = d => new Date(d+"T12:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
-let transactions = [];
-try { transactions = JSON.parse(localStorage.getItem("pulse_transactions") || "[]"); if(!Array.isArray(transactions)) transactions=[]; } catch(e) { transactions=[]; }
+let transactions = [], protectedData = null;   // protectedData = saved data PULSE could not use; it is never overwritten without a recovery copy
+try { const rawStored = localStorage.getItem("pulse_transactions");
+  if(rawStored !== null && rawStored.trim() !== ""){ let parsed; try { parsed = JSON.parse(rawStored); } catch(e) { parsed = undefined; }
+    if(Array.isArray(parsed)) transactions = parsed; else if(parsed !== null) protectedData = {kind:"unreadable", raw:rawStored}; } }
+catch(e) { protectedData = {kind:"read-error"}; }
 let budget = (() => { try { const b = Number(localStorage.getItem("pulse_budget")); if(Number.isFinite(b) && b > 0 && b <= 1e12) return b; } catch(e) {} return 20000; })();
 let selectedType = "expense", editingId = null;
-const save = () => { try { localStorage.setItem("pulse_transactions",JSON.stringify(transactions)); } catch(e) { toast("Couldn't save — your browser storage may be full."); } };
+const save = () => { try { localStorage.setItem("pulse_transactions",JSON.stringify(transactions)); return true; } catch(e) { toast("Couldn't save — your browser storage may be full."); return false; } };
+// Saves a NEW list first; memory and screen change only if the save worked (no false "saved"/"deleted" messages, nothing reappears later).
+function commitTransactions(next){
+  if(!totalsWithinSafeRange(next)){ toast("These transactions would make a total too large to calculate reliably. Reduce the total before saving."); return false; }
+  if(!confirmOverwriteOfProtectedData()) return false;
+  try { localStorage.setItem("pulse_transactions", JSON.stringify(next)); }
+  catch(e) { toast("Couldn't save — your browser storage may be full. Nothing was changed."); return false; }
+  transactions = next; protectedData = null; return true;
+}
+// If saved data could not be read (or some records were rejected), ask before replacing it and offer a recovery copy first.
+function confirmOverwriteOfProtectedData(){
+  if(!protectedData) return true;
+  if(protectedData.kind === "read-error") { toast("PULSE could not read saved data from this browser. Nothing will be overwritten. Reload the app and try again."); return false; }
+  const raw = protectedData.kind === "unreadable";
+  const what = raw ? "Your saved transactions could not be read." : `${protectedData.count} saved record${protectedData.count===1?" was":"s were"} unreadable and ignored.`;
+  if(!confirm(`${what}\n\nSaving now will permanently replace ${raw ? "them" : "it"}.\n\nOK = download a recovery copy, then continue.\nCancel = keep everything untouched and do not save.`)){ toast("Nothing was saved. Your stored data is untouched."); return false; }
+  try {
+    const blob = new Blob([raw ? protectedData.raw : JSON.stringify(protectedData.raw, null, 2)], {type: raw ? "text/plain" : "application/json"});
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = `pulse-${raw ? "unreadable-data" : "rejected-records"}-${isoToday(new Date())}.${raw ? "txt" : "json"}`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch(e) { if(!confirm("The recovery copy could not be created. Replace the unreadable data anyway?")){ toast("Nothing was saved."); return false; } }
+  return true;
+}
 const monthTx = () => transactions.filter(t=>monthKey(t.date)===monthKey(isoToday(today)));
-const sum = (arr,type) => arr.filter(t=>t.type===type).reduce((a,t)=>a+Number(t.amount),0);
+function preciseTypeTotal(arr,type){
+  let total=0, compensation=0;
+  for(const t of arr){
+    if(t.type!==type) continue;
+    const value=Number(t.amount), adjusted=value-compensation, next=total+adjusted;
+    compensation=(next-total)-adjusted; total=next;
+    if(!Number.isFinite(total) || total>MAX_SAFE_TOTAL) return Infinity;
+  }
+  return cents(total);
+}
+const sum = (arr,type) => preciseTypeTotal(arr,type);
+function totalsWithinSafeRange(list){
+  return Number.isFinite(preciseTypeTotal(list,"income")) && Number.isFinite(preciseTypeTotal(list,"expense"));
+}
 const catIcon = (cat,type) => (CATEGORIES[type]||[]).find(c=>c[0]===cat)?.[1] || "📦";
 function init(){
   $("todayLabel").textContent=today.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
@@ -152,8 +197,8 @@ function render(){
   $("budgetSpent").innerHTML=`${money(exp)} <span style="font-size:12px;color:var(--muted);font-weight:500">/ ${money(budget)}</span>`;
   const pct=budget?Math.min(100,exp/budget*100):0;$("budgetBar").style.width=pct+"%";$("budgetBar").style.background=exp>budget?"var(--red)":"var(--green)";
   $("budgetNote").textContent=exp>budget?`You've exceeded your budget by ${money(exp-budget)}.`:`${money(Math.max(0,budget-exp))} left in your monthly budget.`;
-  const grouped={};m.filter(t=>t.type==="expense").forEach(t=>grouped[t.category]=(grouped[t.category]||0)+Number(t.amount));
-  const cats=Object.entries(grouped).sort((a,b)=>b[1]-a[1]);
+  const grouped={};m.filter(t=>t.type==="expense").forEach(t=>(grouped[t.category] ||= []).push(t));
+  const cats=Object.entries(grouped).map(([c,items])=>[c,sum(items,"expense")]).sort((a,b)=>b[1]-a[1]);
   $("categoryList").innerHTML=cats.length?cats.slice(0,5).map(([c,v])=>`<div class="cat-row"><div class="cat-icon">${catIcon(c,"expense")}</div><div><div class="cat-name">${escapeHtml(c)}</div><div class="bar"><i style="width:${exp?Math.max(3,v/exp*100):0}%"></i></div></div><div class="cat-value">${money(v)}</div></div>`).join(""):'<div class="empty">No spending categories yet.</div>';
   $("insight").innerHTML=m.length?`You've recorded <strong>${m.length} transaction${m.length===1?"":"s"}</strong> this month. Your net cash flow is <strong class="${inc-exp>=0?"positive":"negative"}">${money(inc-exp)}</strong>. ${exp>budget?"Consider reviewing your spending this month.":"Keep tracking to understand your money habits."}`:'Add transactions to see your financial snapshot.';
   renderTransactions();drawChart();updateDataUI();
@@ -163,7 +208,7 @@ function renderTransactions(){
   const q=$("search").value.toLowerCase(),type=$("filterType").value,cat=$("filterCategory").value;
   const list=[...transactions].sort((a,b)=>b.date.localeCompare(a.date)).filter(t=>(!q||(t.title+" "+t.category+" "+(t.note||"")).toLowerCase().includes(q))&&(type==="all"||t.type===type)&&(cat==="all"||t.category===cat));
   $("txCount").textContent=`${list.length} record${list.length===1?"":"s"}`;$("emptyState").hidden=list.length!==0;
-  $("txBody").innerHTML=list.map(t=>`<tr><td><div class="tx-name"><span class="tx-badge">${catIcon(t.category,t.type)}</span><span>${escapeHtml(t.title)}<span class="tx-meta" style="display:block">${escapeHtml(t.note||t.type)}</span></span></div></td><td>${prettyDate(t.date)}</td><td>${escapeHtml(t.category)}</td><td class="tx-amount ${t.type==="income"?"positive":"negative"}">${t.type==="income"?"+":"−"}${money(t.amount)}</td><td><div class="actions"><button class="icon-btn" data-edit="${escapeHtml(t.id)}" title="Edit">✎</button><button class="icon-btn" data-delete="${escapeHtml(t.id)}" title="Delete">×</button></div></td></tr>`).join("");
+  $("txBody").innerHTML=list.map(t=>`<tr><td><div class="tx-name"><span class="tx-badge">${catIcon(t.category,t.type)}</span><span>${escapeHtml(t.title)}<span class="tx-meta" style="display:block">${escapeHtml(t.note||t.type)}</span></span></div></td><td>${prettyDate(t.date)}</td><td>${escapeHtml(t.category)}</td><td class="tx-amount ${t.type==="income"?"positive":"negative"}">${t.type==="income"?"+":"−"}${money(t.amount)}</td><td><div class="actions"><button class="icon-btn" data-edit="${escapeHtml(t.id)}" title="Edit" aria-label="Edit ${escapeHtml(t.title)}">✎</button><button class="icon-btn" data-delete="${escapeHtml(t.id)}" title="Delete" aria-label="Delete ${escapeHtml(t.title)}">×</button></div></td></tr>`).join("");
 }
 function drawChart(){
   const canvas=$("flowChart"),rect=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
@@ -172,10 +217,11 @@ function drawChart(){
   const w=rect.width,h=rect.height,pad={l:8,r:8,t:12,b:27},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
   const months=[];for(let i=5;i>=0;i--){const d=new Date(today.getFullYear(),today.getMonth()-i,1);months.push({key:`${d.getFullYear()}-${d.getMonth()}`,label:d.toLocaleDateString("en-IN",{month:"short"})});}
   const vals=months.map(m=>{const arr=transactions.filter(t=>monthKey(t.date)===m.key);return [sum(arr,"income"),sum(arr,"expense")];});
-  const max=Math.max(100,...vals.flat())*1.15;ctx.font="10px system-ui";ctx.textAlign="center";
+  const chartValues=vals.flat().filter(Number.isFinite);
+  const max=Math.max(100,...chartValues)*1.15;ctx.font="10px system-ui";ctx.textAlign="center";
   for(let i=0;i<4;i++){const y=pad.t+ch*i/3;ctx.strokeStyle="#2b3850";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();}
   const group=cw/6,bw=Math.min(15,group*.25);
-  vals.forEach((v,i)=>{const x=pad.l+group*i+group/2;[v[0],v[1]].forEach((n,j)=>{const bh=n/max*ch;ctx.fillStyle=j===0?"#39d6a0":"#ff7185";const bx=x+(j===0?-bw-2:2);roundRect(ctx,bx,pad.t+ch-bh,bw,bh,4);});ctx.fillStyle="#8f9bb3";ctx.fillText(months[i].label,x,pad.t+ch+19);});
+  vals.forEach((v,i)=>{const x=pad.l+group*i+group/2;[v[0],v[1]].forEach((n,j)=>{if(!Number.isFinite(n))return;const bh=n/max*ch;ctx.fillStyle=j===0?"#39d6a0":"#ff7185";const bx=x+(j===0?-bw-2:2);roundRect(ctx,bx,pad.t+ch-bh,bw,bh,4);});ctx.fillStyle="#8f9bb3";ctx.fillText(months[i].label,x,pad.t+ch+19);});
 }
 function roundRect(ctx,x,y,w,h,r){if(h<=0)return;ctx.beginPath();ctx.roundRect(x,y,w,h<r*2?h:r);ctx.fill();}
 function openModal(type="expense",id=null){
@@ -194,16 +240,16 @@ $("transactionForm").addEventListener("submit",e=>{
   const problem=transactionProblem(title,amount,date);if(problem){toast(problem);return;}
   const item=cleanTransaction({id:editingId||String(Date.now()),title,amount,date,type:selectedType,category:$("txCategory").value,note:$("txNote").value.trim()});
   if(!item||!item.id){toast("Please enter valid transaction details.");return;}
-  if(editingId){transactions=transactions.map(t=>t.id===editingId?item:t);toast("Transaction updated.");}
-  else{transactions.push(item);toast("Transaction added.");}
-  save();closeModal();render();
+  const next=editingId?transactions.map(t=>t.id===editingId?item:t):[...transactions,item];
+  if(!commitTransactions(next))return;   // dialog stays open so nothing you typed is lost
+  toast(editingId?"Transaction updated.":"Transaction added.");closeModal();render();
 });
 $("txBody").addEventListener("click",e=>{
   const edit=e.target.closest("[data-edit]"),del=e.target.closest("[data-delete]");
   if(edit){const t=transactions.find(x=>x.id===edit.dataset.edit);if(t)openModal(t.type,t.id);}
-  if(del){const id=del.dataset.delete;if(confirm("Delete this transaction? This cannot be undone.")){transactions=transactions.filter(t=>t.id!==id);save();render();toast("Transaction deleted.");}}
+  if(del){const id=del.dataset.delete;if(confirm("Delete this transaction? This cannot be undone.")){if(!commitTransactions(transactions.filter(t=>t.id!==id)))return;render();toast("Transaction deleted.");}}
 });
-  $("addTop").onclick=()=>openModal();$("quickExpense").onclick=()=>openModal("expense");$("quickIncome").onclick=()=>openModal("income");
+$("addTop").onclick=()=>openModal();$("quickExpense").onclick=()=>openModal("expense");$("quickIncome").onclick=()=>openModal("income");
 $("closeModal").onclick=closeModal;$("cancelModal").onclick=closeModal;
 $("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal();});
 $("search").addEventListener("input",renderTransactions);$("filterType").addEventListener("change",renderTransactions);$("filterCategory").addEventListener("change",renderTransactions);
@@ -281,7 +327,7 @@ function parseBackup(text){
       if(txSignature(seenIds.get(t.id)) === txSignature(t)){ skipped++; continue; }   // exact repeat of the same record
       t.id = newId();                                                                  // same id, different details: keep both
     }
-    seenIds.set(t.id, t); valid.push(t);
+seenIds.set(t.id, t); valid.push(t);
   }
   const b = Number(budgetIn);
   return {valid, noOwnId, skipped, exportedAt, budget: (Number.isFinite(b) && b > 0 && b <= 1e12) ? b : null};
@@ -299,19 +345,18 @@ function planImport(valid, current, noOwnId = new Set()){
   }
   return {fresh, dup, conflicts};
 }
-  
 /* IMPORT-CORE END */
 
   // Validates transactions read from LocalStorage. Reuses cleanTransaction(); one bad record never affects the others.
 function sanitizeStoredTransactions(list){
-  const out = [], seen = new Set(); let rejected = 0;
+  const out = [], seen = new Set(), rejectedRaw = []; let rejected = 0;
   for(const r of (Array.isArray(list) ? list : [])){
     let t = null; try { t = cleanTransaction(r); } catch(e) { t = null; }
-    if(!t){ rejected++; continue; }
+    if(!t){ rejected++; rejectedRaw.push(r); continue; }
     while(!t.id || seen.has(t.id)) t.id = newId();      // missing, unsafe or duplicate id -> fresh safe id (record kept)
     seen.add(t.id); out.push(t);
   }
-  return {list: out, rejected};
+  return {list: out, rejected, rejectedRaw};
 }
 
 function safeGet(k){ try { return localStorage.getItem(k); } catch(e) { return null; } }
@@ -371,21 +416,26 @@ function showImportPreview(){
 }
 function applyImport(mode){
   const p = pendingImport; if(!p) return;
+  if(!confirmOverwriteOfProtectedData()) return;
   if(mode === "replace" && transactions.length && !confirm(`Replace your ${transactions.length} current transactions with the ${p.valid.length} from this backup?\n\nA safety copy is kept, so you can undo this.`)) return;
   const before = {savedAt: new Date().toISOString(), budget, transactions};
   try { localStorage.setItem(UNDO_KEY, JSON.stringify(before)); }
   catch(e) { closeImport(); toast("Not enough storage to import safely. Nothing was changed."); return; }
   const nextTx = mode === "replace" ? p.valid : [...transactions, ...p.plan.fresh];
   const nextBudget = mode === "replace" && p.budget ? p.budget : budget;
+  if(!totalsWithinSafeRange(nextTx)){ toast("This backup would make an income or expense total too large to calculate reliably. Nothing was imported."); return; }
   try {
     localStorage.setItem("pulse_transactions", JSON.stringify(nextTx));
     localStorage.setItem("pulse_budget", String(nextBudget));
   } catch(e) {
-    try { localStorage.setItem("pulse_transactions", JSON.stringify(transactions)); localStorage.setItem("pulse_budget", String(budget)); } catch(_) {}
-    closeImport(); toast("Import failed. Your data was not changed."); return;
+    let rolledBack = false;
+    try { localStorage.setItem("pulse_transactions", JSON.stringify(transactions)); localStorage.setItem("pulse_budget", String(budget)); rolledBack = true; } catch(_) {}
+    closeImport();
+    toast(rolledBack ? "Import failed. Your previous data was restored." : "Import failed and automatic rollback could not be confirmed. Do not close or clear this app; export any data you can still access and contact support.");
+    return;
   }
   const added = p.plan.fresh.length;
-  transactions = nextTx; budget = nextBudget;
+  transactions = nextTx; budget = nextBudget; protectedData = null;
   closeImport(); render();
   toast(mode === "replace" ? `Restored ${nextTx.length} transactions.` : `Added ${added} new transaction${added===1?"":"s"}.`);
 }
@@ -402,7 +452,7 @@ $("importFile").addEventListener("change", async e => {
   pendingImport = {...parsed, name: file.name, plan: planImport(parsed.valid, transactions, parsed.noOwnId)};
   showImportPreview();
 });
-  $("importMerge").onclick = () => applyImport(transactions.length ? "merge" : "replace");
+$("importMerge").onclick = () => applyImport(transactions.length ? "merge" : "replace");
 $("importReplace").onclick = () => applyImport("replace");
 $("importCancel").onclick = closeImport; $("closeImport").onclick = closeImport;
 $("importBackdrop").addEventListener("click", e => { if(e.target === $("importBackdrop")) closeImport(); });
@@ -411,19 +461,31 @@ $("undoImportBtn").onclick = () => {
   if(!snap || !Array.isArray(snap.transactions)){ toast("Nothing to undo."); updateDataUI(); return; }
   const d = snap.savedAt && !isNaN(new Date(snap.savedAt)) ? prettyDate(isoToday(new Date(snap.savedAt))) : "earlier";
   if(!confirm(`Undo the last import? PULSE will go back to the ${snap.transactions.length} transactions it had on ${d}.`)) return;
-  transactions = sanitizeStoredTransactions(snap.transactions).list; const b = Number(snap.budget); if(Number.isFinite(b) && b > 0 && b <= 1e12) budget = b;
-  save(); try { localStorage.setItem("pulse_budget", String(budget)); localStorage.removeItem(UNDO_KEY); } catch(e) {}
+  const restored = sanitizeStoredTransactions(snap.transactions).list; const b = Number(snap.budget), nextBudget = (Number.isFinite(b) && b > 0 && b <= 1e12) ? b : budget;
+  if(!totalsWithinSafeRange(restored)){ toast("The saved undo copy exceeds the reliable calculation limit. Nothing was changed."); return; }
+  if(!confirmOverwriteOfProtectedData()) return;
+  try { localStorage.setItem("pulse_transactions", JSON.stringify(restored)); localStorage.setItem("pulse_budget", String(nextBudget)); }
+  catch(e) {
+    let rolledBack=false;
+    try { localStorage.setItem("pulse_transactions", JSON.stringify(transactions)); localStorage.setItem("pulse_budget", String(budget)); rolledBack=true; } catch(_) {}
+    toast(rolledBack ? "Undo failed. Your current data was restored." : "Undo failed and rollback could not be confirmed. Do not close or clear this app; export any data you can still access.");
+    return;
+  }
+  transactions=restored; budget=nextBudget; protectedData=null;
+  try { localStorage.removeItem(UNDO_KEY); } catch(e) {}
   render(); toast("Import undone.");
 };
   /* ===================== END DATA MANAGEMENT ===================== */
 
-{ const storedBefore = safeGet("pulse_transactions"); let storedWasList = false;
-  try { storedWasList = Array.isArray(JSON.parse(storedBefore)); } catch(e) {}
-  const startup = sanitizeStoredTransactions(transactions);
-  const changed = storedWasList && JSON.stringify(transactions) !== JSON.stringify(startup.list);
+{ const startup = sanitizeStoredTransactions(transactions);
+  const changed = !protectedData && JSON.stringify(transactions) !== JSON.stringify(startup.list);
   transactions = startup.list;
-  if(startup.rejected) toast(`${startup.rejected} invalid saved record${startup.rejected===1?"":"s"} ignored.`);
-  if(changed) save();   // write the cleaned list back; save() handles storage errors and the in-memory list stays intact
+  if(startup.rejected){
+    if(!protectedData) protectedData = {kind:"rejected", raw:startup.rejectedRaw, count:startup.rejected};
+    toast(`${startup.rejected} unreadable saved record${startup.rejected===1?"":"s"} left untouched. Nothing is deleted unless you confirm.`);
+  } else if(protectedData) toast("Your saved transactions could not be read. They are left untouched until you confirm.");
+  else if(changed) save();   // only repaired (not removed) records are written back; a failed save keeps the in-memory list
+  if(!totalsWithinSafeRange(transactions)) toast("Some saved totals exceed the reliable calculation limit. Your records are preserved; reduce the total before adding or importing more.");
 }
 init();
 
